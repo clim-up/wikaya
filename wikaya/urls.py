@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -18,4 +19,13 @@ urlpatterns = [
 
     # Endpoint to refresh the access token using a refresh token
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # API schema in YAML format
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+
+    # Swagger UI (interactive API documentation)
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+    # ReDoc UI (alternative API documentation)
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
