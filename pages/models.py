@@ -43,6 +43,7 @@ class UserFiles(models.Model):
         default=16,  # Normal adult respiratory rate
         verbose_name='Respiratory Rate (breaths/min)'
     )
+    notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -199,4 +200,112 @@ class Vaccination(BaseMedicalModel):
 
     def __str__(self):
         return f"{self.name} - {self.date_administered}"
+
+class Medication2(models.Model):
+    TIMING_CHOICES = [
+        ('morning', 'Morning'),
+        ('afternoon', 'Afternoon'),
+        ('evening', 'Evening'),
+        ('night', 'Night'),
+    ]
+    
+    user = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='medications'
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Medication Name'
+    )
+    dosage = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        verbose_name='Capsule'
+    )
+    duration_days = models.PositiveIntegerField(
+        verbose_name='Duration (days)',
+        help_text='Treatment duration in days'
+    )
+    timing = models.CharField(
+        max_length=10,
+        choices=TIMING_CHOICES,
+        verbose_name='Administration Time'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Medication2'
+        verbose_name_plural = 'Medications2'
+
+    def __str__(self):
+        return f"{self.name} - {self.get_timing_display()}"
+
+class MedicationReminder(models.Model):
+    medication = models.ForeignKey(
+        Medication2,
+        on_delete=models.CASCADE,
+        related_name='reminders'
+    )
+    reminder_time = models.TimeField(
+        verbose_name='Reminder Time'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Active Reminder'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['reminder_time']
+        verbose_name = 'Medication Reminder'
+        verbose_name_plural = 'Medication Reminders'
+
+    def __str__(self):
+        return f"{self.medication} at {self.reminder_time.strftime('%H:%M')}"
+
+class Conversation(models.Model):
+    patient = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='patient_conversations'
+    )
+    doctor = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='doctor_conversations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Conversation'
+        verbose_name_plural = 'Conversations'
+        unique_together = ['patient', 'doctor']  # Prevent duplicate conversations
+
+    def __str__(self):
+        return f"Conversation between {self.patient} and {self.doctor}"
+
+class Message(models.Model):
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    sender = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='sent_messages'
+    )
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['timestamp']
+        indexes = [
+            models.Index(fields=['conversation', 'timestamp']),
+        ]
+
+    def __str__(self):
+        return f"Message from {self.sender} at {self.timestamp}"
 

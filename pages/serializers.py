@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
-from .models import Allergy, HealthProblem, Medication, LabReport, Imaging, Vaccination, UserFiles
+from .models import Allergy, HealthProblem, Medication, LabReport, Imaging, Vaccination, UserFiles, Medication2, MedicationReminder, Conversation, Message
 import re
 
 class UserFilesSerializer(serializers.ModelSerializer):
@@ -87,3 +87,34 @@ class VaccinationSerializer(serializers.ModelSerializer):
         model = Vaccination
         fields = '__all__'
         read_only_fields = ('user', 'created_at', 'updated_at')
+
+class MedicationReminderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicationReminder
+        fields = '__all__'
+        read_only_fields = ('created_at',)
+
+class Medication2Serializer(serializers.ModelSerializer):
+    reminders = MedicationReminderSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Medication2
+        fields = '__all__'
+        read_only_fields = ('user', 'created_at')
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'content', 'timestamp']
+        read_only_fields = ['sender', 'timestamp']
+
+class ConversationSerializer(serializers.ModelSerializer):
+    messages = MessageSerializer(many=True, read_only=True)
+    patient = serializers.StringRelatedField()
+    doctor = serializers.StringRelatedField()
+
+    class Meta:
+        model = Conversation
+        fields = ['id', 'patient', 'doctor', 'created_at', 'messages']
+        read_only_fields = ['created_at']
+
