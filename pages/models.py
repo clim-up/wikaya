@@ -309,3 +309,19 @@ class Message(models.Model):
     def __str__(self):
         return f"Message from {self.sender} at {self.timestamp}"
 
+class Pregnancy(models.Model):
+    user = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='Pregnants'
+    )
+    start_date = models.DateField()
+    notes = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f"{self.start_date} - {self.user.email}"
+

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
-from .models import Allergy, HealthProblem, Medication, LabReport, Imaging, Vaccination, UserFiles, Medication2, MedicationReminder, Conversation, Message
+from .models import Allergy, HealthProblem, Medication, LabReport, Imaging, Vaccination, UserFiles, Medication2, MedicationReminder, Conversation, Message, Pregnancy
 import re
 
 class UserFilesSerializer(serializers.ModelSerializer):
@@ -117,4 +117,13 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = ['id', 'patient', 'doctor', 'created_at', 'messages']
         read_only_fields = ['created_at']
+
+class PregnancySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pregnancy
+        fields = ['id', 'start_date', 'notes', 'created_at']
+        read_only_fields = ['user', 'created_at']
+        extra_kwargs = {
+            'start_date': {'required': True},
+        }
 

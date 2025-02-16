@@ -1,8 +1,14 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.parsers import JSONParser
 from django.db.models import Q
-from .models import Allergy, HealthProblem, Medication, LabReport, Imaging, Vaccination, UserFiles, BaseMedicalModel, Medication2, MedicationReminder, Conversation, Message
-from .serializers import AllergySerializer, HealthProblemSerializer, MedicationSerializer, LabReportSerializer, ImagingSerializer, VaccinationSerializer, UserFilesSerializer, Medication2Serializer, MedicationReminderSerializer, ConversationSerializer, MessageSerializer
+from .models import Allergy, HealthProblem, Medication, LabReport, Imaging, Vaccination, UserFiles, BaseMedicalModel, Medication2, MedicationReminder, Conversation, Message, Pregnancy
+from .serializers import AllergySerializer, HealthProblemSerializer, MedicationSerializer, LabReportSerializer, ImagingSerializer, VaccinationSerializer, UserFilesSerializer, Medication2Serializer, MedicationReminderSerializer, ConversationSerializer, MessageSerializer, PregnancySerializer
+import google.generativeai as genai
+import os
 
 class BaseMedicalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -100,4 +106,66 @@ class MessageViewSet(viewsets.ModelViewSet):
             sender=self.request.user,
             conversation=conversation
         )
+
+class PregnancyViewSet(viewsets.ModelViewSet):
+    serializer_class = PregnancySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Pregnancy.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class AIChat(APIView):
+    def post(self, request):
+        # Get the prompt from request data
+        prompt = request.data.get('prompt')
+        
+        if not prompt:
+            return Response(
+                {"error": "Prompt is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+
+        try:
+            # Configure the API key
+            # genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+            genai.configure(api_key="AIzaSyCtAlUZH0dzbSiXBX7OI_hQWhRTf1sc250")
+            
+            # Create the model instance
+            model = genai.GenerativeModel('gemini-2.0-flash')
+
+            user_health = UserFiles.objects.filter(user=request.user).latest('created_at')
+
+            full_prompt = f"""
+            You are a medical doctor. Respond to the patient's question below using their health data.
+            Maintain a professional but compassionate tone. Here is the patient's health information:
+
+            Patient Data:
+            - Weight: {user_health.weight} kg
+            - Height: {user_health.height} cm
+            - Blood Pressure: {user_health.blood_pressure}
+            - Blood Sugar: {user_health.blood_sugar_level} mg/dL
+            - BMI: {user_health.body_mass_index}
+
+            Patient Question: {prompt}
+
+            Doctor's Response:
+            """
+            
+            # Generate content
+            response = model.generate_content(full_prompt)
+            
+            return Response({
+                "response": response.text
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 

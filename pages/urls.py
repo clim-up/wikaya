@@ -13,7 +13,9 @@ router.register(r'user-files', UserFilesViewSet, basename='userfiles')
 router.register(r'medications2', MedicationViewSet, basename='medication2')
 router.register(r'medication-reminders', MedicationReminderViewSet, basename='medicationreminder')
 router.register(r'conversation', ConversationViewSet, basename='conversation')
+router.register(r'pregnancies', PregnancyViewSet, basename='pregnancy')
 
 urlpatterns = [
     path('api/files/', include(router.urls)),
+    path('api/ai-chat/', AIChat.as_view(), name='ai-chat'),
 ]
